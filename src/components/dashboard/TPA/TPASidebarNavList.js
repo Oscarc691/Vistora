@@ -10,7 +10,7 @@ export const mainDashTPANav = [
     component: "Dashboard",
   },
   {
-    label: "Claims",
+    label: "Claims Review",
     icon: <FileText className="w-5 h-5" />,
     iconEmoji: "📋",
     link: "/dashboard/tpa/claimsReview",
@@ -23,8 +23,28 @@ export const mainDashTPANav = [
     iconEmoji: "🚩",
     link: "/dashboard/tpa/flaggedClaims",
     description: "High-risk claims requiring attention",
-    component: "FraudIntelligence",
+    component: "FlaggedClaims",
     priority: "high",
+    hasSubmenu: true,
+    submenu: [
+      {
+        label: "Review Queue",
+        icon: <AlertTriangle className="w-4 h-4" />,
+        iconEmoji: "📋",
+        link: "/dashboard/tpa/flaggedClaims/review",
+        description: "Claims pending review",
+        component: "FlaggedClaims",
+      },
+      {
+        label: "Fraud Intelligence",
+        icon: <Shield className="w-4 h-4" />,
+        iconEmoji: "🔍",
+        link: "/dashboard/tpa/flaggedClaims/fraud-intelligence",
+        description: "AI-powered fraud detection and escalated investigations",
+        component: "FraudIntelligence",
+        priority: "critical",
+      },
+    ],
   },
   {
     label: "Fraud Signals",
