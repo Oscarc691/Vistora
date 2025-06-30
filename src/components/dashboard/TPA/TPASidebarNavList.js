@@ -10,7 +10,7 @@ export const mainDashTPANav = [
     component: "Dashboard",
   },
   {
-    label: "Claims",
+    label: "Claims Review",
     icon: <FileText className="w-5 h-5" />,
     iconEmoji: "📋",
     link: "/dashboard/tpa/claimsReview",
