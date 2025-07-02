@@ -40,7 +40,7 @@ const Settings = () => {
   ];
 
   const handleSave = (e) => {
-    e.preventDefault(); // 🛑 stop the page from reloading
+    e.preventDefault(); // stop the page from reloading
   };
 
   const handleThemeChange = (e) => {
