@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import TimezoneSelect from 'react-timezone-select';
+import React, { useState } from "react";
+import TimezoneSelect from "react-timezone-select";
 
 const TimezonePicker = () => {
   const [timezone, setTimezone] = useState(
@@ -12,7 +12,7 @@ const TimezonePicker = () => {
       <TimezoneSelect
         value={timezone}
         onChange={(val) => setTimezone(val.value || val)}
-        menuPlacement='top'
+        menuPlacement="top"
       />
     </div>
   );
