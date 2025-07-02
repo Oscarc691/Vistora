@@ -95,7 +95,7 @@ const Tasks = () => {
     dueDate: "",
     relatedClaim: "",
     assignedTo: "",
-  });
+  },);
   const [sortConfig, setSortConfig] = useState({
     key: "dueDate",
     direction: "asc",
@@ -766,7 +766,14 @@ const Tasks = () => {
 
   // Create Task Modal - FIXED INPUT ISSUE
   const CreateTaskModal = useCallback(() => {
+    let title ;
+    let description;
+    let priority;
+    let dueDate;
+    let relatedClaim;
+    let assignedTo;
     if (!showCreateModal) return null;
+
 
     return (
       <div className="fixed inset-0 !mt-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -807,9 +814,10 @@ const Tasks = () => {
                   id="title"
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   placeholder="Enter task title (AI will suggest improvements)"
-                  value={newTask.title}
+                  value={title}
                   onChange={(e) =>
-                    setNewTask((prev) => ({ ...prev, title: e.target.value }))
+                    //setNewTask((prev) => ({ ...prev, title: e.target.value }))
+                    title = e.target.value
                   }
                   required
                 />
@@ -827,12 +835,13 @@ const Tasks = () => {
                   rows="4"
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   placeholder="Enter task description (AI will analyze for completeness)"
-                  value={newTask.description}
+                  value={description}
                   onChange={(e) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
+                    // setNewTask((prev) => ({
+                    //   ...prev,
+                    //   description: e.target.value,
+                    // }))
+                      description = e.target.value
                   }
                   required
                 ></textarea>
@@ -849,12 +858,13 @@ const Tasks = () => {
                   <select
                     id="priority"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    value={newTask.priority}
+                    value={priority}
                     onChange={(e) =>
-                      setNewTask((prev) => ({
-                        ...prev,
-                        priority: e.target.value,
-                      }))
+                      // setNewTask((prev) => ({
+                      //   ...prev,
+                      //   priority: e.target.value,
+                      // }))
+                      priority = e.target.value
                     }
                     required
                   >
@@ -875,12 +885,13 @@ const Tasks = () => {
                     type="date"
                     id="dueDate"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    value={newTask.dueDate}
+                    value={dueDate}
                     onChange={(e) =>
-                      setNewTask((prev) => ({
-                        ...prev,
-                        dueDate: e.target.value,
-                      }))
+                      // setNewTask((prev) => ({
+                      //   ...prev,
+                      //   dueDate: e.target.value,
+                      // }))
+                      dueDate = e.target.value
                     }
                     required
                   />
@@ -897,12 +908,13 @@ const Tasks = () => {
                 <select
                   id="relatedClaim"
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  value={newTask.relatedClaim}
+                  value={relatedClaim}
                   onChange={(e) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      relatedClaim: e.target.value,
-                    }))
+                    // setNewTask((prev) => ({
+                    //   ...prev,
+                    //   relatedClaim: e.target.value,
+                    // }))
+                    relatedClaim = e.target.value
                   }
                 >
                   <option value="">None</option>
@@ -926,12 +938,13 @@ const Tasks = () => {
                   id="assignedTo"
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   placeholder="Enter assignee name"
-                  value={newTask.assignedTo}
+                  value={assignedTo}
                   onChange={(e) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      assignedTo: e.target.value,
-                    }))
+                    // setNewTask((prev) => ({
+                    //   ...prev,
+                    //   assignedTo: e.target.value,
+                    // }))
+                    assignedTo = e.target.value
                   }
                   required
                 />
@@ -947,7 +960,20 @@ const Tasks = () => {
               Cancel
             </button>
             <button
-              onClick={handleCreateTask}
+              onClick={
+                () => {
+                  setNewTask((prev) => ({
+                    ...prev,
+                    title: title,
+                    description: description,
+                    priority: priority,
+                    dueDate: dueDate,
+                    relatedClaim: relatedClaim,
+                    assignedTo: assignedTo
+                  }));
+                  handleCreateTask()
+                  }
+                }
               className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all duration-200 font-semibold"
               disabled={
                 !newTask.title ||
