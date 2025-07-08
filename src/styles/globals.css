@@ -74,7 +74,6 @@ body {
     --primary: 345 100% 25%; /* #800020 */
     --primary-dark: 345 100% 18%; /* #600018 */
     --primary-light: 345 100% 35%; /* #9a0026 */
-
     --primary-foreground: 0 0% 100%;
   }
   .dark {
