@@ -9,7 +9,7 @@ function isEven(idx){
     return false
   }
 
-const Table = ({ data, statusFilter, setStatusFilter }) => {
+const Table = ({ data, statusFilter, setStatusFilter, selectedRows, setSelectedRows }) => {
   // const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
   const [daysOpenFilter, setDaysOpenFilter] = useState('');
@@ -49,6 +49,14 @@ const Table = ({ data, statusFilter, setStatusFilter }) => {
     endPage = totalPages;
     startPage = Math.max(1, endPage - windowSize + 1);
   }
+
+  const handleCheckboxChange = (appealId) => {
+    setSelectedRows(prev => 
+      prev.includes(appealId)
+        ? prev.filter(id => id !== appealId)
+        : [...prev, appealId]
+    );
+  };
 
   return (
     <div className="border border-gray-300 rounded-[6px] bg-white flex flex-col gap-y-2 p-4 font-['Aktiv_Grotesk',_'Manrope',_sans-serif]">
@@ -103,8 +111,9 @@ const Table = ({ data, statusFilter, setStatusFilter }) => {
       {/* Table */}
       <table className="min-w-full bg-white rounded-xl border-2 shadow-lg border-gray-500 overflow-hidden text-sm">
         <thead>
-          <tr className="bg-gray-300 text-left">
-            <th className="border-none rounded-tl-xl px-4 py-4">Appeal ID</th>
+          <tr className="w-full bg-gray-300 text-left flex flex-row items-center justify-between">
+            <th className='border-none rounded-tl-xl px-4 py-4'> </th>
+            <th className="border-none px-4 py-2">Appeal ID</th>
             <th className="border-none px-4 py-2">Claim ID</th>
             <th className="border-none px-4 py-2">Patient</th>
             <th className="border-none px-4 py-2">Submission Date</th>
@@ -117,7 +126,15 @@ const Table = ({ data, statusFilter, setStatusFilter }) => {
         </thead>
         <tbody>
           {paginatedData.map((row, idx) => (
-            <tr key={idx} className={isEven(idx) ? "bg-gray-100 text-left" : "bg-gray-200 text-left"}>
+            <tr key={idx} className={isEven(idx) ? "bg-gray-100 text-left w-full flex flex-row items-center justify-between" 
+            : "bg-gray-200 text-left w-full flex flex-row items-center justify-between"}>
+              <td className="px-4 py-4">
+                <input
+                  type="checkbox"
+                  checked={selectedRows.includes(row.appealId)}
+                  onChange={() => handleCheckboxChange(row.appealId)}
+                />
+              </td>
               <td className="border-non px-4 py-4">{row.appealId}</td>
               <td className="border-none px-4 py-4">{row.claimId}</td>
               <td className="border-none px-4 py-4">{row.patient}</td>

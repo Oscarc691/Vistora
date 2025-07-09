@@ -2,11 +2,13 @@ import React from "react";
 import { useState } from "react";
 import Table from "../../ui/AppealsTable";
 import DashboardStatCard from "../General/DashboardStatCard";
-import { MessageSquare, Clock, AlarmClockCheck, AlarmMinusIcon, AlertTriangleIcon } from "lucide-react"; 
+import { MessageSquare, Clock, AlarmClockCheck, AlarmMinusIcon, AlertTriangleIcon, X } from "lucide-react"; 
 
 const AppealsManagement = () => {
 
   const [statusFilter, setStatusFilter] = useState('');
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   const sampleData = [
     {
@@ -43,7 +45,7 @@ const AppealsManagement = () => {
       riskScore: 40,
     },
     {
-      appealId: 'A003',
+      appealId: 'A004',
       claimId: 'C9876',
       patient: 'Carlos Lopez',
       submissionDate: '2024-05-01',
@@ -54,7 +56,7 @@ const AppealsManagement = () => {
       riskScore: 20,
     },
     {
-      appealId: 'A003',
+      appealId: 'A005',
       claimId: 'C9876',
       patient: 'Daniel Santiago',
       submissionDate: '2024-05-01',
@@ -65,7 +67,7 @@ const AppealsManagement = () => {
       riskScore: 60,
     },
     {
-      appealId: 'A003',
+      appealId: 'A006',
       claimId: 'C9876',
       patient: 'Monica Diaz',
       submissionDate: '2024-05-01',
@@ -76,7 +78,7 @@ const AppealsManagement = () => {
       riskScore: 100,
     },
     {
-      appealId: 'A003',
+      appealId: 'A007',
       claimId: 'C9876',
       patient: 'Will Metzler',
       submissionDate: '2024-05-01',
@@ -104,7 +106,7 @@ const AppealsManagement = () => {
           <p className="text-sm text-gray-500">Review and manage provider appeals efficiently</p>
         </div>
         <span className="w-fit inline-flex gap-3 text-sm">
-          <button className="bg-white rounded-[6px] border border-gray-200 px-4 py-2">Assign Bulk</button>
+          <button className="bg-white rounded-[6px] border border-gray-200 px-4 py-2" onClick={() => setIsBulkModalOpen(true)}>Assign Bulk ({selectedRows.length})</button>
           <button className="text-white rounded-[6px] bg-red-800 border px-2 py-2">Export Appeals</button>
         </span>
       </span>
@@ -167,7 +169,25 @@ const AppealsManagement = () => {
         </div>
         
       </div>
-      <Table data={sampleData} statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
+      <Table data={sampleData} statusFilter={statusFilter} setStatusFilter={setStatusFilter} selectedRows={selectedRows} setSelectedRows={setSelectedRows}/>
+
+      {isBulkModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className='w-1/2 h-fit bg-white px-4 py-4 border border-gray-300 shadow-md rounded-[6px] flex flex-col gap-3 items-center z-50'>
+            <button
+              className="absolute top-4 right-4 text-white hover:text-gray-300"
+              onClick={() => setIsBulkModalOpen(false)}>
+              <X size={'32px'}/>
+            </button>
+            <h2 className='font-semibold'>Actions Panel</h2>
+            <p className='font-medium text-sm'>Appeals chosen: {selectedRows.length}</p>
+            <span className='text-sm flex flex-row gap-3'>
+              <button className='border bg-green-600 rounded-[8px] px-3 py-2 text-white font-semibold'>Approve Appeal</button>
+              <button className='border bg-red-600 rounded-[8px] px-3 py-2 text-white font-semibold'>Reject Appeal</button>
+            </span>
+         </div>
+        </div>
+      )}
     </section>
   );
 };
