@@ -12,6 +12,7 @@ import {
   Building2,
   Shield,
   X,
+  Save,
 } from "lucide-react"
 
 // Import the styled generic Table component
@@ -166,30 +167,35 @@ const FlaggedClaims = ({ currentPage, setCurrentPage }) => {
   const flagTypes = [...new Set(claimsData.map((claim) => claim.flagType))]
   const escalatedClaims = claimsData.filter((claim) => claim.status === "Escalated for Investigation")
 
-  // Popup positioning function - always show on right
+  // Popup positioning function - center it better to avoid cutoff
   const calculatePopupPosition = (event) => {
     const rect = event.currentTarget.getBoundingClientRect()
-    const popupWidth = 320 // Reduced from 400px
-    const popupHeight = 450 // Reduced from 500px
+    const popupWidth = 320
+    const popupHeight = 450
     const margin = 15
 
-    // Always position on the right side
-    let x = rect.right + margin
-    let y = rect.top
+    // Center the popup relative to the button/row
+    let x = rect.left + rect.width / 2 - popupWidth / 2
+    let y = rect.top - popupHeight - margin // Show above the row
 
-    // If popup would go off the right edge, position it to fit within screen
-    if (x + popupWidth > window.innerWidth) {
+    // If popup would go off the left edge
+    if (x < margin) {
+      x = margin
+    }
+
+    // If popup would go off the right edge
+    if (x + popupWidth > window.innerWidth - margin) {
       x = window.innerWidth - popupWidth - margin
     }
 
-    // Ensure popup stays within vertical bounds
-    if (y + popupHeight > window.innerHeight) {
-      y = window.innerHeight - popupHeight - margin
+    // If popup would go off the top, show it below instead
+    if (y < margin) {
+      y = rect.bottom + margin
     }
 
-    // Check if popup would go off the top edge of the screen
-    if (y < margin) {
-      y = margin
+    // If popup would go off the bottom when shown below
+    if (y + popupHeight > window.innerHeight - margin) {
+      y = window.innerHeight - popupHeight - margin
     }
 
     return { x, y }
@@ -653,683 +659,719 @@ const FlaggedClaims = ({ currentPage, setCurrentPage }) => {
   )
 
   return (
-    <div className="flex h-screen bg-white">
-      {/* Main Content */}
-      <div className="flex-1">
-        {/* Header */}
-        <div className="bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200/50 sticky top-0 z-30">
-          <div className="px-8 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Flagged Claims</h1>
-                <p className="text-gray-600 mt-1">AI-flagged claims requiring manual investigation</p>
-              </div>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => handleExport(filteredData)}
-                  className="px-6 py-3 bg-gradient-to-r from-red-900 to-red-800 text-white rounded-xl hover:from-red-800 hover:to-red-700 focus:outline-none focus:ring-4 focus:ring-red-800/30 transition-all duration-300 shadow-lg hover:shadow-xl font-medium"
-                >
-                  📊 Export Report
-                </button>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Page Title */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="px-8 py-6">
+          <h1 className="text-3xl font-bold text-gray-900">Flagged Claims</h1>
+          <p className="text-gray-600 mt-2">AI-flagged claims requiring manual investigation and review</p>
         </div>
-
-        <div>
-          {/* Escalated Claims Alert */}
-          {escalatedClaims.length > 0 && (
-            <div className="mx-6 mt-6 bg-gradient-to-r from-purple-50 to-violet-100/50 border border-purple-200/50 rounded-xl p-4 mb-6 shadow-lg">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Shield className="w-5 h-5 text-purple-600" />
-                  </div>
-                </div>
-                <div className="ml-3 flex-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium text-purple-800">
-                        🔍 INVESTIGATION ALERT: Claims Under Active Investigation
-                      </h3>
-                      <p className="text-sm text-purple-700 mt-1">
-                        {escalatedClaims.length} claim{escalatedClaims.length > 1 ? "s" : ""} escalated for detailed
-                        fraud investigation
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-purple-600">{escalatedClaims.length}</div>
-                      <div className="text-xs text-purple-600">Active Investigations</div>
-                    </div>
-                  </div>
-                </div>
+      </div>
+      {/* Escalated Claims Alert */}
+      {escalatedClaims.length > 0 && (
+        <div className="mx-6 mt-6 bg-gradient-to-r from-purple-50 to-violet-100/50 border border-purple-200/50 rounded-xl p-4 mb-6 shadow-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <Shield className="w-5 h-5 text-purple-600" />
               </div>
             </div>
-          )}
-
-          {/* Styled Generic Table component with custom configurations */}
-          <Table
-            data={filteredData}
-            columns={columns}
-            title=""
-            subtitle=""
-            showSearch={true}
-            showPagination={true}
-            itemsPerPage={10}
-            onRowClick={(claim) => {
-              setSelectedClaim(claim)
-              setShowDetailModal(true)
-            }}
-            onRowHover={handleMouseEnter}
-            onRowLeave={handleMouseLeave}
-            renderFilters={renderFilters}
-            renderHeaderActions={() => null}
-            highlightCondition={(claim) => claim.status === "Escalated for Investigation"}
-          />
-        </div>
-
-        {/* All Modal Components using the reusable Modal component */}
-
-        {/* Claim Detail Modal */}
-        <Modal
-          isOpen={showDetailModal && selectedClaim}
-          onClose={() => setShowDetailModal(false)}
-          title="Claim Review"
-          subtitle={selectedClaim ? `${selectedClaim.id} - ${selectedClaim.primaryFlagReason}` : ""}
-          size="xl"
-          headerBadge={
-            selectedClaim?.status === "Escalated for Investigation" && (
-              <span className="px-3 py-1 text-sm font-medium bg-purple-100 text-purple-800 rounded-full flex items-center">
-                <Shield className="w-4 h-4 mr-1" />
-                Under Investigation
-              </span>
-            )
-          }
-        >
-          {selectedClaim && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Investigation Details Section */}
-                {selectedClaim.status === "Escalated for Investigation" && (
-                  <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-lg font-semibold text-purple-900 flex items-center">
-                        <Shield className="w-5 h-5 mr-2" />
-                        Investigation Details
-                      </h4>
-                      <button
-                        onClick={() => {
-                          setClaimToRemoveInvestigation(selectedClaim)
-                          setShowSignInModal(true)
-                        }}
-                        className="px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-150"
-                      >
-                        Remove Investigation
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <span className="text-sm text-gray-600">Escalated Date:</span>
-                        <span className="ml-2 font-medium text-gray-900">{selectedClaim.escalatedDate}</span>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-600">Assigned Investigator:</span>
-                        <span className="ml-2 font-medium text-gray-900">{selectedClaim.assignedInvestigator}</span>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-600">Escalation Reason:</span>
-                        <div className="mt-2 p-4 bg-white rounded-lg border border-purple-200 text-sm text-gray-800 leading-relaxed">
-                          {selectedClaim.escalationReason}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Claim Summary Section */}
-                <div className="bg-blue-50 rounded-xl p-6">
-                  <h4 className="text-lg font-semibold text-blue-900 mb-4">Claim Summary</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h5 className="text-sm font-medium text-blue-800 mb-3 flex items-center">
-                        <User className="w-4 h-4 mr-2" />
-                        Patient Information
-                      </h5>
-                      <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="text-gray-600">Name:</span>{" "}
-                          <span className="font-medium">{selectedClaim.patientName}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">ID:</span>{" "}
-                          <span className="font-medium">{selectedClaim.patientId}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-medium text-blue-800 mb-3 flex items-center">
-                        <Building2 className="w-4 h-4 mr-2" />
-                        Provider Information
-                      </h5>
-                      <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="text-gray-600">Name:</span>{" "}
-                          <span className="font-medium">{selectedClaim.provider}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">ID:</span>{" "}
-                          <span className="font-medium">{selectedClaim.providerId}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 pt-4 border-t border-blue-200">
-                    <div>
-                      <span className="text-gray-600">Submission Date:</span>{" "}
-                      <span className="font-medium">{selectedClaim.submissionDate}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Amount:</span>{" "}
-                      <span className="font-medium">${selectedClaim.amount?.toLocaleString()}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Procedure:</span>{" "}
-                      <span className="font-medium">{selectedClaim.procedureCode}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Flag Analysis Section */}
-                <div className="bg-red-50 rounded-xl p-6">
-                  <h4 className="text-lg font-semibold text-red-900 mb-4">Flag Analysis</h4>
-                  <div className="space-y-4">
-                    <div>
-                      <h5 className="text-sm font-medium text-red-800 mb-3">All Flagged Indicators</h5>
-                      <div className="space-y-2">
-                        {selectedClaim.flagReasons?.map((reason, index) => (
-                          <div
-                            key={index}
-                            className="flex items-start space-x-3 p-3 bg-white rounded-lg border border-red-200"
-                          >
-                            <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
-                            <div className="flex-1">
-                              <div className="font-medium text-gray-900">{reason}</div>
-                              <div className="text-sm text-gray-600 mt-1">
-                                {reason === "Suspicious Billing Pattern" &&
-                                  "Unusual billing frequency detected for this procedure code"}
-                                {reason === "High-Value Claim" &&
-                                  "Claim amount exceeds typical range for this procedure"}
-                                {reason === "Provider History" && "Provider has previous flagged claims"}
-                                {reason === "Duplicate Code Usage" &&
-                                  "Same procedure code billed multiple times in short period"}
-                                {reason === "Frequent Claims" && "Patient has submitted multiple claims recently"}
-                                {reason === "Blacklisted Provider" && "Provider is on high-risk monitoring list"}
-                                {reason === "Unusual Referral Pattern" &&
-                                  "Referral pattern deviates from normal healthcare flow"}
-                                {reason === "Referral Loop Detected" && "Circular referral pattern identified"}
-                                {reason === "Geographic Anomaly" &&
-                                  "Services provided outside patient's typical geographic area"}
-                                {reason === "Identity Verification Failed" &&
-                                  "Patient identity could not be fully verified"}
-                                {reason === "Suspicious Documentation" && "Documentation inconsistencies detected"}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Documentation Section */}
-                <div className="bg-green-50 rounded-xl p-6">
-                  <h4 className="text-lg font-semibold text-green-900 mb-4">Supporting Documentation</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
-                      <div className="flex items-center">
-                        <FileText className="w-5 h-5 text-green-600 mr-3" />
-                        <div>
-                          <div className="font-medium text-gray-900">Medical Report.pdf</div>
-                          <div className="text-sm text-gray-500">2.3 MB</div>
-                        </div>
-                      </div>
-                      <button className="flex items-center text-green-600 hover:text-green-800">
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
-                      <div className="flex items-center">
-                        <FileText className="w-5 h-5 text-green-600 mr-3" />
-                        <div>
-                          <div className="font-medium text-gray-900">Invoice.pdf</div>
-                          <div className="text-sm text-gray-500">0.9 MB</div>
-                        </div>
-                      </div>
-                      <button className="flex items-center text-green-600 hover:text-green-800">
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Review Notes Section */}
-                <div className="bg-yellow-50 rounded-xl p-6">
-                  <h4 className="text-lg font-semibold text-yellow-900 mb-4">Review Notes</h4>
-                  <textarea
-                    placeholder="Add your review notes here..."
-                    className="w-full px-3 py-2 border border-yellow-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800 bg-white"
-                    rows="4"
-                  />
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-6">
-                {/* Risk Assessment Section */}
-                <div className="bg-red-50 rounded-xl p-6">
-                  <h4 className="text-lg font-semibold text-red-900 mb-4">Risk Assessment</h4>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">Risk Score</span>
-                        <span className="text-lg font-bold text-gray-900">{selectedClaim.riskScore}/100</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-4">
-                        <div
-                          className={`h-4 rounded-full ${getRiskScoreBarColor(selectedClaim.status)}`}
-                          style={{ width: `${selectedClaim.riskScore}%` }}
-                        ></div>
-                      </div>
-                      <div className="text-center mt-2 flex items-center justify-center space-x-2">
-                        {getStatusIcon(selectedClaim.status)}
-                        <span
-                          className={`px-3 py-1 text-sm font-medium rounded-full ${getSeverityColor(selectedClaim.severity)}`}
-                        >
-                          {selectedClaim.severity} Risk
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-sm text-gray-600">AI Confidence:</span>
-                      <span className="ml-2 font-medium text-gray-900">{selectedClaim.confidenceLevel}%</span>
-                    </div>
-
-                    <div>
-                      <span className="text-sm text-gray-600">Flag Type:</span>
-                      <span className="ml-2 font-medium text-gray-900">{selectedClaim.flagType}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Review Actions Section */}
-                <div className="bg-gray-50 rounded-xl p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Review Actions</h4>
-                  <div className="space-y-3">
-                    <button className="w-full flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-150">
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Approve
-                    </button>
-                    <button className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-150">
-                      <Send className="w-4 h-4 mr-2" />
-                      Forward
-                    </button>
-                    {selectedClaim.status !== "Escalated for Investigation" && (
-                      <button
-                        onClick={() => {
-                          setEscalatingClaim(selectedClaim)
-                          setShowEscalationModal(true)
-                        }}
-                        className="w-full flex items-center justify-center px-4 py-3 bg-red-900 text-white rounded-lg hover:bg-red-800 transition-colors duration-150"
-                      >
-                        <AlertTriangle className="w-4 h-4 mr-2" />
-                        Escalate for Investigation
-                      </button>
-                    )}
-                    <button className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-150">
-                      <Users className="w-4 h-4 mr-2" />
-                      Assign to Reviewer
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </Modal>
-
-        {/* Escalation Modal */}
-        <Modal
-          isOpen={showEscalationModal && escalatingClaim}
-          onClose={() => setShowEscalationModal(false)}
-          title="Escalate for Investigation"
-          subtitle={escalatingClaim ? `${escalatingClaim.id} - ${escalatingClaim.primaryFlagReason}` : ""}
-          size="lg"
-        >
-          {escalatingClaim && (
-            <div className="space-y-6">
-              <div className="bg-red-50 rounded-xl p-6">
-                <h4 className="text-lg font-semibold text-red-900 mb-4">Investigation Summary</h4>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Reason for Escalation <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      value={escalationSummary}
-                      onChange={(e) => setEscalationSummary(e.target.value)}
-                      placeholder="Provide a detailed summary of why this claim requires investigation. Include specific concerns, patterns observed, and recommended next steps..."
-                      className="w-full px-3 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800 bg-white"
-                      rows="6"
-                      required
-                    />
-                    <div className="text-xs text-gray-500 mt-1">{escalationSummary.length}/500 characters</div>
-                  </div>
-
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
-                      <div>
-                        <h5 className="text-sm font-medium text-yellow-800">Investigation Impact</h5>
-                        <p className="text-sm text-yellow-700 mt-1">
-                          This claim will be flagged for detailed investigation and may result in audit, payment
-                          suspension, or referral to the investigation unit.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setShowEscalationModal(false)}
-                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmitEscalation}
-                  disabled={!escalationSummary.trim()}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-900 to-red-800 text-white rounded-xl hover:from-red-800 hover:to-red-700 focus:outline-none focus:ring-4 focus:ring-red-800/30 transition-all duration-300 shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Escalate for Investigation
-                </button>
-              </div>
-            </div>
-          )}
-        </Modal>
-
-        {/* Sign In Modal */}
-        <Modal
-          isOpen={showSignInModal}
-          onClose={() => {
-            setShowSignInModal(false)
-            setSignInCredentials({ username: "", password: "" })
-            setSignInError("")
-            setClaimToRemoveInvestigation(null)
-          }}
-          title="Administrator Sign In"
-          subtitle="Authentication required to remove investigation"
-          size="sm"
-        >
-          <div className="space-y-4">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
+            <div className="ml-3 flex-1">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h5 className="text-sm font-medium text-yellow-800">Security Notice</h5>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Removing an active investigation requires administrator privileges and will be logged for audit
-                    purposes.
+                  <h3 className="text-sm font-medium text-purple-800">
+                    🔍 INVESTIGATION ALERT: Claims Under Active Investigation
+                  </h3>
+                  <p className="text-sm text-purple-700 mt-1">
+                    {escalatedClaims.length} claim{escalatedClaims.length > 1 ? "s" : ""} escalated for detailed fraud
+                    investigation
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
-              <input
-                type="text"
-                value={signInCredentials.username}
-                onChange={(e) => setSignInCredentials((prev) => ({ ...prev, username: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800"
-                placeholder="Enter administrator username"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <input
-                type="password"
-                value={signInCredentials.password}
-                onChange={(e) => setSignInCredentials((prev) => ({ ...prev, password: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800"
-                placeholder="Enter administrator password"
-              />
-            </div>
-
-            {signInError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <div className="flex items-center">
-                  <AlertTriangle className="w-4 h-4 text-red-600 mr-2" />
-                  <span className="text-sm text-red-700">{signInError}</span>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-purple-600">{escalatedClaims.length}</div>
+                  <div className="text-xs text-purple-600">Active Investigations</div>
                 </div>
               </div>
-            )}
-
-            <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
-              <strong>Demo Credentials:</strong>
-              <br />
-              Username: admin
-              <br />
-              Password: secure123
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  setShowSignInModal(false)
-                  setSignInCredentials({ username: "", password: "" })
-                  setSignInError("")
-                  setClaimToRemoveInvestigation(null)
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-150"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSignIn}
-                disabled={isSigningIn || !signInCredentials.username || !signInCredentials.password}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
-              >
-                {isSigningIn ? (
-                  <div className="flex items-center justify-center">
-                    <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Authenticating...
-                  </div>
-                ) : (
-                  "Sign In"
-                )}
-              </button>
             </div>
           </div>
-        </Modal>
+        </div>
+      )}
 
-        {/* Remove Investigation Confirmation Modal */}
-        <Modal
-          isOpen={showRemoveInvestigationModal && claimToRemoveInvestigation}
-          onClose={() => {
-            setShowRemoveInvestigationModal(false)
-            setClaimToRemoveInvestigation(null)
+      <div>
+        {/* Table section starts directly */}
+
+        {/* Styled Generic Table component with custom configurations */}
+        <Table
+          data={filteredData}
+          columns={columns}
+          title=""
+          subtitle=""
+          showSearch={true}
+          showPagination={true}
+          itemsPerPage={10}
+          onRowClick={(claim) => {
+            setSelectedClaim(claim)
+            setShowDetailModal(true)
           }}
-          title="Remove Investigation"
-          subtitle={
-            claimToRemoveInvestigation
-              ? `${claimToRemoveInvestigation.id} - ${claimToRemoveInvestigation.primaryFlagReason}`
-              : ""
-          }
-          size="lg"
-        >
-          {claimToRemoveInvestigation && (
-            <div className="space-y-6">
-              <div className="bg-red-50 rounded-xl p-6">
-                <h4 className="text-lg font-semibold text-red-900 mb-4">Confirm Investigation Removal</h4>
-                <div className="space-y-4">
-                  <div className="bg-white rounded-lg p-4 border border-red-200">
-                    <div className="text-sm text-gray-600 mb-2">Current Escalation Reason:</div>
-                    <div className="text-sm text-gray-800 leading-relaxed">
-                      {claimToRemoveInvestigation.escalationReason}
-                    </div>
-                  </div>
+          onRowHover={handleMouseEnter}
+          onRowLeave={handleMouseLeave}
+          renderFilters={renderFilters}
+          renderHeaderActions={() => null}
+          highlightCondition={(claim) => claim.status === "Escalated for Investigation"}
+        />
+      </div>
 
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
-                      <div>
-                        <h5 className="text-sm font-medium text-yellow-800">Warning</h5>
-                        <p className="text-sm text-yellow-700 mt-1">
-                          Removing this investigation will change the status to "Reviewed" and clear all investigation
-                          data. This action will be logged and cannot be undone.
-                        </p>
+      {/* All Modal Components using the reusable Modal component */}
+
+      {/* Claim Detail Modal */}
+      <Modal
+        isOpen={showDetailModal && selectedClaim}
+        onClose={() => setShowDetailModal(false)}
+        title="Claim Review"
+        subtitle={selectedClaim ? `${selectedClaim.id} - ${selectedClaim.primaryFlagReason}` : ""}
+        size="xl"
+        headerBadge={
+          selectedClaim?.status === "Escalated for Investigation" && (
+            <span className="px-3 py-1 text-sm font-medium bg-purple-100 text-purple-800 rounded-full flex items-center">
+              <Shield className="w-4 h-4 mr-1" />
+              Under Investigation
+            </span>
+          )
+        }
+      >
+        {selectedClaim && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Investigation Details Section */}
+              {selectedClaim.status === "Escalated for Investigation" && (
+                <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-purple-900 flex items-center">
+                      <Shield className="w-5 h-5 mr-2" />
+                      Investigation Details
+                    </h4>
+                    <button
+                      onClick={() => {
+                        setClaimToRemoveInvestigation(selectedClaim)
+                        setShowSignInModal(true)
+                      }}
+                      className="px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-150"
+                    >
+                      Remove Investigation
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm text-gray-600">Escalated Date:</span>
+                      <span className="ml-2 font-medium text-gray-900">{selectedClaim.escalatedDate}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Assigned Investigator:</span>
+                      <span className="ml-2 font-medium text-gray-900">{selectedClaim.assignedInvestigator}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Escalation Reason:</span>
+                      <div className="mt-2 p-4 bg-white rounded-lg border border-purple-200 text-sm text-gray-800 leading-relaxed">
+                        {selectedClaim.escalationReason}
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => {
-                    setShowRemoveInvestigationModal(false)
-                    setClaimToRemoveInvestigation(null)
-                  }}
-                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-150"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmRemoveInvestigation}
-                  className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors duration-150"
-                >
-                  Remove Investigation
-                </button>
-              </div>
-            </div>
-          )}
-        </Modal>
-
-        {/* Hover Popup - Larger and Always on Right */}
-        {showHoverPopup && hoveredClaim && (
-          <div
-            className="fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-80 pointer-events-auto"
-            style={{
-              left: `${hoverPosition.x}px`,
-              top: `${hoverPosition.y}px`,
-            }}
-            onMouseEnter={() => setShowHoverPopup(true)}
-            onMouseLeave={handleMouseLeave}
-          >
-            <div className="space-y-3">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-gray-900 text-lg">{hoveredClaim.id}</h4>
-                <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(hoveredClaim.status)}`}>
-                  {hoveredClaim.status}
-                </span>
-              </div>
-
-              {/* Risk Score */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600">Risk Score</span>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg font-bold text-gray-900">{hoveredClaim.riskScore}/100</span>
-                    {getStatusIcon(hoveredClaim.status)}
-                  </div>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className={`h-3 rounded-full ${getRiskScoreBarColor(hoveredClaim.status)}`}
-                    style={{ width: `${hoveredClaim.riskScore}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Key Details */}
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-gray-600">Patient:</span>
-                  <div className="font-medium text-gray-900">{hoveredClaim.patientName}</div>
-                </div>
-                <div>
-                  <span className="text-gray-600">Provider:</span>
-                  <div className="font-medium text-gray-900">{hoveredClaim.provider}</div>
-                </div>
-                <div>
-                  <span className="text-gray-600">Amount:</span>
-                  <div className="font-medium text-gray-900">${hoveredClaim.amount?.toLocaleString()}</div>
-                </div>
-                <div>
-                  <span className="text-gray-600">Date:</span>
-                  <div className="font-medium text-gray-900">{hoveredClaim.submissionDate}</div>
-                </div>
-              </div>
-
-              {/* Primary Flag */}
-              <div className="bg-red-50 rounded-lg p-3">
-                <div className="flex items-start space-x-3">
-                  <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <div className="text-sm font-medium text-red-900">{hoveredClaim.primaryFlagReason}</div>
-                    <div className="text-sm text-red-700 mt-1">
-                      {hoveredClaim.flagReasons?.length > 1 &&
-                        `+${hoveredClaim.flagReasons.length - 1} more flag${hoveredClaim.flagReasons.length > 2 ? "s" : ""}`}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Investigation Alert */}
-              {hoveredClaim.status === "Escalated for Investigation" && (
-                <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                  <div className="flex items-center space-x-3">
-                    <Shield className="w-5 h-5 text-purple-600" />
-                    <div className="text-sm">
-                      <div className="font-medium text-purple-900">Under Investigation</div>
-                      <div className="text-purple-700">Assigned to {hoveredClaim.assignedInvestigator}</div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Additional Details */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="text-sm">
-                  <div className="font-medium text-gray-900 mb-1">Diagnosis:</div>
-                  <div className="text-gray-700">{hoveredClaim.diagnosis}</div>
+              {/* Claim Summary Section */}
+              <div className="bg-blue-50 rounded-xl p-6">
+                <h4 className="text-lg font-semibold text-blue-900 mb-4">Claim Summary</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h5 className="text-sm font-medium text-blue-800 mb-3 flex items-center">
+                      <User className="w-4 h-4 mr-2" />
+                      Patient Information
+                    </h5>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-gray-600">Name:</span>{" "}
+                        <span className="font-medium">{selectedClaim.patientName}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">ID:</span>{" "}
+                        <span className="font-medium">{selectedClaim.patientId}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-medium text-blue-800 mb-3 flex items-center">
+                      <Building2 className="w-4 h-4 mr-2" />
+                      Provider Information
+                    </h5>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-gray-600">Name:</span>{" "}
+                        <span className="font-medium">{selectedClaim.provider}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">ID:</span>{" "}
+                        <span className="font-medium">{selectedClaim.providerId}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 pt-4 border-t border-blue-200">
+                  <div>
+                    <span className="text-gray-600">Submission Date:</span>{" "}
+                    <span className="font-medium">{selectedClaim.submissionDate}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Amount:</span>{" "}
+                    <span className="font-medium">${selectedClaim.amount?.toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Procedure:</span>{" "}
+                    <span className="font-medium">{selectedClaim.procedureCode}</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-blue-50 rounded-lg p-3">
-                <div className="text-sm">
-                  <div className="font-medium text-blue-900 mb-1">AI Confidence:</div>
-                  <div className="text-blue-700">{hoveredClaim.confidenceLevel}% confidence in flag accuracy</div>
+              {/* Flag Analysis Section */}
+              <div className="bg-red-50 rounded-xl p-6">
+                <h4 className="text-lg font-semibold text-red-900 mb-4">Flag Analysis</h4>
+                <div className="space-y-4">
+                  <div>
+                    <h5 className="text-sm font-medium text-red-800 mb-3">All Flagged Indicators</h5>
+                    <div className="space-y-2">
+                      {selectedClaim.flagReasons?.map((reason, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start space-x-3 p-3 bg-white rounded-lg border border-red-200"
+                        >
+                          <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">{reason}</div>
+                            <div className="text-sm text-gray-600 mt-1">
+                              {reason === "Suspicious Billing Pattern" &&
+                                "Unusual billing frequency detected for this procedure code"}
+                              {reason === "High-Value Claim" && "Claim amount exceeds typical range for this procedure"}
+                              {reason === "Provider History" && "Provider has previous flagged claims"}
+                              {reason === "Duplicate Code Usage" &&
+                                "Same procedure code billed multiple times in short period"}
+                              {reason === "Frequent Claims" && "Patient has submitted multiple claims recently"}
+                              {reason === "Blacklisted Provider" && "Provider is on high-risk monitoring list"}
+                              {reason === "Unusual Referral Pattern" &&
+                                "Referral pattern deviates from normal healthcare flow"}
+                              {reason === "Referral Loop Detected" && "Circular referral pattern identified"}
+                              {reason === "Geographic Anomaly" &&
+                                "Services provided outside patient's typical geographic area"}
+                              {reason === "Identity Verification Failed" &&
+                                "Patient identity could not be fully verified"}
+                              {reason === "Suspicious Documentation" && "Documentation inconsistencies detected"}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-orange-50 rounded-lg p-3">
-                <div className="text-sm">
-                  <div className="font-medium text-orange-900 mb-1">Severity Level:</div>
-                  <div className="text-orange-700">{hoveredClaim.severity} risk classification</div>
+              {/* Documentation Section */}
+              <div className="bg-green-50 rounded-xl p-6">
+                <h4 className="text-lg font-semibold text-green-900 mb-4">Supporting Documentation</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
+                    <div className="flex items-center">
+                      <FileText className="w-5 h-5 text-green-600 mr-3" />
+                      <div>
+                        <div className="font-medium text-gray-900">Medical Report.pdf</div>
+                        <div className="text-sm text-gray-500">2.3 MB</div>
+                      </div>
+                    </div>
+                    <button className="flex items-center text-green-600 hover:text-green-800">
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
+                    <div className="flex items-center">
+                      <FileText className="w-5 h-5 text-green-600 mr-3" />
+                      <div>
+                        <div className="font-medium text-gray-900">Invoice.pdf</div>
+                        <div className="text-sm text-gray-500">0.9 MB</div>
+                      </div>
+                    </div>
+                    <button className="flex items-center text-green-600 hover:text-green-800">
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Review Notes Section */}
+              <div className="bg-yellow-50 rounded-xl p-6">
+                <h4 className="text-lg font-semibold text-yellow-900 mb-4">Review Notes</h4>
+                <textarea
+                  placeholder="Add your review notes here..."
+                  className="w-full px-3 py-2 border border-yellow-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800 bg-white"
+                  rows="4"
+                />
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Risk Assessment Section */}
+              <div className="bg-red-50 rounded-xl p-6">
+                <h4 className="text-lg font-semibold text-red-900 mb-4">Risk Assessment</h4>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Risk Score</span>
+                      <span className="text-lg font-bold text-gray-900">{selectedClaim.riskScore}/100</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-4">
+                      <div
+                        className={`h-4 rounded-full ${getRiskScoreBarColor(selectedClaim.status)}`}
+                        style={{ width: `${selectedClaim.riskScore}%` }}
+                      ></div>
+                    </div>
+                    <div className="text-center mt-2 flex items-center justify-center space-x-2">
+                      {getStatusIcon(selectedClaim.status)}
+                      <span
+                        className={`px-3 py-1 text-sm font-medium rounded-full ${getSeverityColor(selectedClaim.severity)}`}
+                      >
+                        {selectedClaim.severity} Risk
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-sm text-gray-600">AI Confidence:</span>
+                    <span className="ml-2 font-medium text-gray-900">{selectedClaim.confidenceLevel}%</span>
+                  </div>
+
+                  <div>
+                    <span className="text-sm text-gray-600">Flag Type:</span>
+                    <span className="ml-2 font-medium text-gray-900">{selectedClaim.flagType}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Review Actions Section */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Review Actions</h4>
+                <div className="space-y-3">
+                  <button className="w-full flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-150">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Approve
+                  </button>
+                  <button className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-150">
+                    <Send className="w-4 h-4 mr-2" />
+                    Forward
+                  </button>
+                  {selectedClaim.status !== "Escalated for Investigation" && (
+                    <button
+                      onClick={() => {
+                        setEscalatingClaim(selectedClaim)
+                        setShowEscalationModal(true)
+                      }}
+                      className="w-full flex items-center justify-center px-4 py-3 bg-red-900 text-white rounded-lg hover:bg-red-800 transition-colors duration-150"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Escalate for Investigation
+                    </button>
+                  )}
+                  <button className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-150">
+                    <Users className="w-4 h-4 mr-2" />
+                    Assign to Reviewer
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Update Section */}
+              <div className="bg-purple-50 rounded-xl p-6">
+                <h4 className="text-lg font-semibold text-purple-900 mb-4">Status Update</h4>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-sm text-gray-600">Current Status:</span>
+                    <span
+                      className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedClaim.status)}`}
+                    >
+                      {selectedClaim.status}
+                    </span>
+                  </div>
+                  {selectedClaim.reviewedBy && (
+                    <div>
+                      <span className="text-sm text-gray-600">Reviewed By:</span>
+                      <span className="ml-2 font-medium text-gray-900">{selectedClaim.reviewedBy}</span>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Update Status</label>
+                    <div className="flex items-center space-x-2">
+                      <select
+                        value={statusUpdates[selectedClaim.id] || selectedClaim.status}
+                        onChange={(e) => handleStatusUpdate(selectedClaim.id, e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Under Investigation">Under Investigation</option>
+                        <option value="Escalated for Investigation">Escalated for Investigation</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Denied">Denied</option>
+                      </select>
+                      {statusUpdates[selectedClaim.id] && statusUpdates[selectedClaim.id] !== selectedClaim.status && (
+                        <button
+                          onClick={() => handleSaveStatus(selectedClaim.id)}
+                          disabled={savingStatus[selectedClaim.id]}
+                          className="flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                        >
+                          {savingStatus[selectedClaim.id] ? (
+                            <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                          ) : (
+                            <Save className="w-4 h-4 mr-1" />
+                          )}
+                          {savingStatus[selectedClaim.id] ? "Saving..." : "Save"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
-      </div>
+      </Modal>
+
+      {/* Escalation Modal */}
+      <Modal
+        isOpen={showEscalationModal && escalatingClaim}
+        onClose={() => setShowEscalationModal(false)}
+        title="Escalate for Investigation"
+        subtitle={escalatingClaim ? `${escalatingClaim.id} - ${escalatingClaim.primaryFlagReason}` : ""}
+        size="lg"
+      >
+        {escalatingClaim && (
+          <div className="space-y-6">
+            <div className="bg-red-50 rounded-xl p-6">
+              <h4 className="text-lg font-semibold text-red-900 mb-4">Investigation Summary</h4>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Reason for Escalation <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={escalationSummary}
+                    onChange={(e) => setEscalationSummary(e.target.value)}
+                    placeholder="Provide a detailed summary of why this claim requires investigation. Include specific concerns, patterns observed, and recommended next steps..."
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800 bg-white"
+                    rows="6"
+                    required
+                  />
+                  <div className="text-xs text-gray-500 mt-1">{escalationSummary.length}/500 characters</div>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
+                    <div>
+                      <h5 className="text-sm font-medium text-yellow-800">Investigation Impact</h5>
+                      <p className="text-sm text-yellow-700 mt-1">
+                        This claim will be flagged for detailed investigation and may result in audit, payment
+                        suspension, or referral to the investigation unit.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowEscalationModal(false)}
+                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitEscalation}
+                disabled={!escalationSummary.trim()}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-red-900 to-red-800 text-white rounded-xl hover:from-red-800 hover:to-red-700 focus:outline-none focus:ring-4 focus:ring-red-800/30 transition-all duration-300 shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Escalate for Investigation
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Sign In Modal */}
+      <Modal
+        isOpen={showSignInModal}
+        onClose={() => {
+          setShowSignInModal(false)
+          setSignInCredentials({ username: "", password: "" })
+          setSignInError("")
+          setClaimToRemoveInvestigation(null)
+        }}
+        title="Administrator Sign In"
+        subtitle="Authentication required to remove investigation"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
+              <div>
+                <h5 className="text-sm font-medium text-yellow-800">Security Notice</h5>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Removing an active investigation requires administrator privileges and will be logged for audit
+                  purposes.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+            <input
+              type="text"
+              value={signInCredentials.username}
+              onChange={(e) => setSignInCredentials((prev) => ({ ...prev, username: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800"
+              placeholder="Enter administrator username"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <input
+              type="password"
+              value={signInCredentials.password}
+              onChange={(e) => setSignInCredentials((prev) => ({ ...prev, password: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800"
+              placeholder="Enter administrator password"
+            />
+          </div>
+
+          {signInError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <div className="flex items-center">
+                <AlertTriangle className="w-4 h-4 text-red-600 mr-2" />
+                <span className="text-sm text-red-700">{signInError}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
+            <strong>Demo Credentials:</strong>
+            <br />
+            Username: admin
+            <br />
+            Password: secure123
+          </div>
+
+          <div className="flex space-x-3">
+            <button
+              onClick={() => {
+                setShowSignInModal(false)
+                setSignInCredentials({ username: "", password: "" })
+                setSignInError("")
+                setClaimToRemoveInvestigation(null)
+              }}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-150"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSignIn}
+              disabled={isSigningIn || !signInCredentials.username || !signInCredentials.password}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+            >
+              {isSigningIn ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Authenticating...
+                </div>
+              ) : (
+                "Sign In"
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Remove Investigation Confirmation Modal */}
+      <Modal
+        isOpen={showRemoveInvestigationModal && claimToRemoveInvestigation}
+        onClose={() => {
+          setShowRemoveInvestigationModal(false)
+          setClaimToRemoveInvestigation(null)
+        }}
+        title="Remove Investigation"
+        subtitle={
+          claimToRemoveInvestigation
+            ? `${claimToRemoveInvestigation.id} - ${claimToRemoveInvestigation.primaryFlagReason}`
+            : ""
+        }
+        size="lg"
+      >
+        {claimToRemoveInvestigation && (
+          <div className="space-y-6">
+            <div className="bg-red-50 rounded-xl p-6">
+              <h4 className="text-lg font-semibold text-red-900 mb-4">Confirm Investigation Removal</h4>
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg p-4 border border-red-200">
+                  <div className="text-sm text-gray-600 mb-2">Current Escalation Reason:</div>
+                  <div className="text-sm text-gray-800 leading-relaxed">
+                    {claimToRemoveInvestigation.escalationReason}
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
+                    <div>
+                      <h5 className="text-sm font-medium text-yellow-800">Warning</h5>
+                      <p className="text-sm text-yellow-700 mt-1">
+                        Removing this investigation will change the status to "Reviewed" and clear all investigation
+                        data. This action will be logged and cannot be undone.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-4">
+              <button
+                onClick={() => {
+                  setShowRemoveInvestigationModal(false)
+                  setClaimToRemoveInvestigation(null)
+                }}
+                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-150"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmRemoveInvestigation}
+                className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors duration-150"
+              >
+                Remove Investigation
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Hover Popup - Larger and Always on Right */}
+      {showHoverPopup && hoveredClaim && (
+        <div
+          className="fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-80 pointer-events-auto"
+          style={{
+            left: `${hoverPosition.x}px`,
+            top: `${hoverPosition.y}px`,
+          }}
+          onMouseEnter={() => setShowHoverPopup(true)}
+          onMouseLeave={handleMouseLeave}
+        >
+          <div className="space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-gray-900 text-lg">{hoveredClaim.id}</h4>
+              <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(hoveredClaim.status)}`}>
+                {hoveredClaim.status}
+              </span>
+            </div>
+
+            {/* Risk Score */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">Risk Score</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg font-bold text-gray-900">{hoveredClaim.riskScore}/100</span>
+                  {getStatusIcon(hoveredClaim.status)}
+                </div>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className={`h-3 rounded-full ${getRiskScoreBarColor(hoveredClaim.status)}`}
+                  style={{ width: `${hoveredClaim.riskScore}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Key Details */}
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-gray-600">Patient:</span>
+                <div className="font-medium text-gray-900">{hoveredClaim.patientName}</div>
+              </div>
+              <div>
+                <span className="text-gray-600">Provider:</span>
+                <div className="font-medium text-gray-900">{hoveredClaim.provider}</div>
+              </div>
+              <div>
+                <span className="text-gray-600">Amount:</span>
+                <div className="font-medium text-gray-900">${hoveredClaim.amount?.toLocaleString()}</div>
+              </div>
+              <div>
+                <span className="text-gray-600">Date:</span>
+                <div className="font-medium text-gray-900">{hoveredClaim.submissionDate}</div>
+              </div>
+            </div>
+
+            {/* Primary Flag */}
+            <div className="bg-red-50 rounded-lg p-3">
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="text-sm font-medium text-red-900">{hoveredClaim.primaryFlagReason}</div>
+                  <div className="text-sm text-red-700 mt-1">
+                    {hoveredClaim.flagReasons?.length > 1 &&
+                      `+${hoveredClaim.flagReasons.length - 1} more flag${hoveredClaim.flagReasons.length > 2 ? "s" : ""}`}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Investigation Alert */}
+            {hoveredClaim.status === "Escalated for Investigation" && (
+              <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                <div className="flex items-center space-x-3">
+                  <Shield className="w-5 h-5 text-purple-600" />
+                  <div className="text-sm">
+                    <div className="font-medium text-purple-900">Under Investigation</div>
+                    <div className="text-purple-700">Assigned to {hoveredClaim.assignedInvestigator}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Additional Details */}
+            <div className="bg-gray-50 rounded-lg p-3">
+              <div className="text-sm">
+                <div className="font-medium text-gray-900 mb-1">Diagnosis:</div>
+                <div className="text-gray-700">{hoveredClaim.diagnosis}</div>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 rounded-lg p-3">
+              <div className="text-sm">
+                <div className="font-medium text-blue-900 mb-1">AI Confidence:</div>
+                <div className="text-blue-700">{hoveredClaim.confidenceLevel}% confidence in flag accuracy</div>
+              </div>
+            </div>
+
+            <div className="bg-orange-50 rounded-lg p-3">
+              <div className="text-sm">
+                <div className="font-medium text-orange-900 mb-1">Severity Level:</div>
+                <div className="text-orange-700">{hoveredClaim.severity} risk classification</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
