@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye } from "lucide-react"
+import { Eye, Clock } from "lucide-react"
 import AppealDetailView from './AppealsDetailView';
 
 function isEven(idx){
@@ -9,24 +9,27 @@ function isEven(idx){
     return false
   }
 
-const Table = ({ data }) => {
-  const [statusFilter, setStatusFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [claimIdFilter, setClaimIdFilter] = useState('');
-  const [providerFilter, setProviderFilter] = useState('');
+const Table = ({ data, statusFilter, setStatusFilter, selectedRows, setSelectedRows }) => {
+  // const [statusFilter, setStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [daysOpenFilter, setDaysOpenFilter] = useState('');
+  const [query, setQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAppeal, setSelectedAppeal] = useState(null);
   const rowsPerPage = 5;
 
+  // Filters the data in the table
   const filteredData = data.filter(row => {
     return (
       (statusFilter === '' || row.status === statusFilter) &&
-      (dateFilter === '' || row.submissionDate === dateFilter) &&
-      row.claimId.toLowerCase().includes(claimIdFilter.toLowerCase()) &&
-      row.provider.toLowerCase().includes(providerFilter.toLowerCase())
+      (priorityFilter === '' || row.priority === priorityFilter) &&
+      (daysOpenFilter === '' || row.daysOpen === Number(daysOpenFilter)) &&
+      (row.claimId.toLowerCase().includes(query.toLowerCase()) ||
+      row.patient.toLowerCase().includes(query.toLowerCase()))
     );
   });
 
+// For the pagination makes multiple pages to scroll through
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
   const paginatedData = filteredData.slice(
     (currentPage - 1) * rowsPerPage,
@@ -34,82 +37,144 @@ const Table = ({ data }) => {
   );
 
   const uniqueStatuses = [...new Set(data.map(row => row.status))];
-  const uniqueDates = [...new Set(data.map(row => row.submissionDate))];
+  const uniqueDaysOpen = [...new Set(data.map(row => row.daysOpen))].sort((a, b) => a - b);
+  const uniquePriority = [...new Set(data.map(row => row.priority))];
+
+  // For pagination to limit number of number tabs on bottom
+  const windowSize = 4;
+  let startPage = Math.max(1, currentPage - Math.floor(windowSize / 2));
+  let endPage = startPage + windowSize - 1;
+
+  if (endPage > totalPages) {
+    endPage = totalPages;
+    startPage = Math.max(1, endPage - windowSize + 1);
+  }
+
+  const handleCheckboxChange = (appealId) => {
+    setSelectedRows(prev => 
+      prev.includes(appealId)
+        ? prev.filter(id => id !== appealId)
+        : [...prev, appealId]
+    );
+  };
 
   return (
-    <div className="flex flex-col gap-y-8 p-4 font-['Aktiv_Grotesk',_'Manrope',_sans-serif]">
+    <div className="border border-gray-300 rounded-[6px] bg-white flex flex-col gap-y-2 p-4 font-['Aktiv_Grotesk',_'Manrope',_sans-serif]">
+      <h2 className='text-lg font-semibold'>Appeals Inbox</h2>
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4 mb-4">
-        <span>Filters:</span>
-        <select
-          className="border px-3 py-2 rounded text-gray-500 hover:cursor-pointer "
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-        >
-          <option value="">All</option>
-          {uniqueStatuses.map(status => (
-            <option key={status} value={status}>{status}</option>
-          ))}
-        </select>
-
-        <select
-          className="border px-3 py-2 rounded text-gray-500 hover:cursor-pointer"
-          value={dateFilter}
-          onChange={e => setDateFilter(e.target.value)}
-        >
-          <option value="">All Dates</option>
-          {uniqueDates.map(date => (
-            <option key={date} value={date}>{date}</option>
-          ))}
-        </select>
-
+      <div className="flex flex-wrap items-center justify-between mb-4">
         <input
           type="text"
-          placeholder="Search Claim ID"
-          className="border px-3 py-2 rounded"
-          value={claimIdFilter}
-          onChange={e => setClaimIdFilter(e.target.value)}
+          placeholder="Search by Claim ID or Patient Name"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="border p-2 rounded w-1/2"
         />
 
-        <input
-          type="text"
-          placeholder="Search Provider"
-          className="border px-3 py-2 rounded"
-          value={providerFilter}
-          onChange={e => setProviderFilter(e.target.value)}
-        />
+        {/* Dropdown Filters */}
+        <span className='inline-flex gap-3 text-sm'>
+          <select
+            className="border px-3 py-2 rounded text-gray-500 hover:cursor-pointer "
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+          >
+            <option value="">All Status</option>
+            {uniqueStatuses.map(status => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </select>
+
+          <select
+            className="border px-3 py-2 rounded text-gray-500 hover:cursor-pointer "
+            value={daysOpenFilter}
+            onChange={e => setDaysOpenFilter(e.target.value)}
+          >
+            <option value="">All Days Open</option>
+            {uniqueDaysOpen.map(daysOpen => (
+              <option key={daysOpen} value={daysOpen}>{daysOpen}</option>
+            ))}
+          </select>
+
+          <select
+            className="border px-3 py-2 rounded text-gray-500 hover:cursor-pointer"
+            value={priorityFilter}
+            onChange={e => setPriorityFilter(e.target.value)}
+          >
+            <option value="">All Priority</option>
+            {uniquePriority.map(priority => (
+              <option key={priority} value={priority}>{priority}</option>
+            ))}
+          </select>
+        </span>
+
       </div>
       {/* Table */}
-      <table className="w-full bg-white rounded-xl border-2 shadow-lg border-gray-500 overflow-hidden">
+      <table className="min-w-full table-fixed bg-white rounded-xl border-2 shadow-lg border-gray-500 overflow-hidden text-sm">
         <thead>
-          <tr className="bg-gray-300 text-left">
-            <th className="border-none rounded-tl-xl px-4 py-4">Appeal ID</th>
-            <th className="border-none px-4 py-2">Claim ID</th>
-            <th className="border-none px-4 py-2">Provider</th>
-            <th className="border-none px-4 py-2">Submission Date</th>
-            <th className="border-none px-4 py-2">Appeal Status</th>
-            <th className="rounded-tr-xl border-none px-4 py-2">Action</th>
+          <tr className="w-full bg-gray-300 text-left">
+            <th className="w-[40px] px-4 py-4"> </th>
+            <th className="w-[100px] px-4 py-2">Appeal ID</th>
+            <th className="w-[100px] px-4 py-2">Claim ID</th>
+            <th className="w-[120px] px-4 py-2">Patient</th>
+            <th className="w-[140px] px-4 py-2">Submission Date</th>
+            <th className="w-[100px] px-4 py-2">Status</th>
+            <th className="w-[80px] px-4 py-2">Priority</th>
+            <th className="w-[100px] px-4 py-2">Doctor ID</th>
+            <th className="w-[80px] px-4 py-2">Days Open</th>
+            <th className="w-[100px] px-4 py-2">Actions</th>
           </tr>
         </thead>
         <tbody>
           {paginatedData.map((row, idx) => (
-            <tr key={idx} className={isEven(idx) ? "bg-gray-100 text-left" : "bg-gray-200 text-left"}>
-              <td className="border-none px-4 py-4">{row.appealId}</td>
-              <td className="border-none px-4 py-4">{row.claimId}</td>
-              <td className="border-none px-4 py-4">{row.provider}</td>
-              <td className="border-none px-4 py-4">{row.submissionDate}</td>
-              <td className="border-none px-4 py-4">{row.status}</td>
+            <tr key={idx} className={isEven(idx) ? "bg-gray-100 text-left" 
+            : "bg-gray-200 text-left"}>
+              <td className="w-[50px] pl-4">
+                <input
+                  type="checkbox"
+                  checked={selectedRows.includes(row.appealId)}
+                  onChange={() => handleCheckboxChange(row.appealId)}
+                />
+              </td>
+              <td className="w-[100px] border-non py-4">{row.appealId}</td>
+              <td className="w-[100px] border-none py-4">{row.claimId}</td>
+              <td className="truncate max-w-[120px] w-[120px] border-none py-4">{row.patient}</td>
+              <td className="border-none py-4">{row.submissionDate}</td>
+              <td className="w-1/8 border-none py-4">{row.status}</td>
+              <td className="w-[80px] bg-red-500 border-none py-4">
+                <span className={`w-full rounded-[8px] py-1 text-xs ${
+                    row.priority === 'High'
+                        ? 'bg-red-600 bg-opacity-30 text-red-800'
+                        : row.priority === 'Medium'
+                        ? 'bg-yellow-400 bg-opacity-30 text-yellow-800'
+                        : row.priority === 'Low'
+                        ? 'bg-green-600 bg-opacity-30 text-green-800'
+                        : 'bg-none'
+                      }`}>{row.priority}
+                  </span>
+              </td>
+              <td className="border-none px-4 py-4">{row.doctorID}</td>
+              <td className="border-none px-4 py-4">
+                <span className='inline-flex items-center gap-1 text-xs font-semibold text-gray-500'>
+                  <span><Clock color='gray' size={'16px'}/></span>
+                  {row.daysOpen >= 8 ? (
+                    <span className='text-red-700'>{row.daysOpen}d</span>
+                  ) : (
+                    <span>{row.daysOpen}d</span>
+                  )}
+                </span>
+              </td>
               <td className="inline-flex items-center border-none px-4 py-4">
                 <Eye size={18} color='black'></Eye>
                 <button className="text-black pl-1 pr-3 py-1 rounded focus:underline"
                  onClick={() => setSelectedAppeal(row)} >
-                  View
+                  Review
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
       {/* Pagination */}
       <div className="mt-4 flex justify-center items-center space-x-2">
         <button
@@ -120,17 +185,20 @@ const Table = ({ data }) => {
           &lt;
         </button>
 
-        {[...Array(totalPages)].map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrentPage(i + 1)}
-            className={`px-3 py-1 rounded ${
-              currentPage === i + 1 ? 'bg-red-800 text-white' : 'bg-gray-100'
-            }`}
-          >
-            {i + 1}
-          </button>
-        ))}
+        {[...Array(endPage - startPage + 1)].map((_, i) => {
+          const page = startPage + i;
+          return (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded ${
+                currentPage === page ? 'bg-red-800 text-white' : 'bg-gray-100'
+              }`}
+            >
+              {page}
+            </button>
+          );
+        })}
 
         <button
           className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
@@ -140,12 +208,15 @@ const Table = ({ data }) => {
           &gt;
         </button>
       </div>
+
+      {/* Modal for Appeal Detail View  */}
        {selectedAppeal && (
         <AppealDetailView
             appeal={selectedAppeal}
             onClose={() => setSelectedAppeal(null)}
         />
         )}
+
     </div>
   );
 };
