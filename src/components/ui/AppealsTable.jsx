@@ -109,40 +109,39 @@ const Table = ({ data, statusFilter, setStatusFilter, selectedRows, setSelectedR
 
       </div>
       {/* Table */}
-      <table className="min-w-full bg-white rounded-xl border-2 shadow-lg border-gray-500 overflow-hidden text-sm">
+      <table className="min-w-full table-fixed bg-white rounded-xl border-2 shadow-lg border-gray-500 overflow-hidden text-sm">
         <thead>
-          <tr className="w-full bg-gray-300 text-left flex flex-row items-center justify-between">
-            <th className='border-none rounded-tl-xl px-4 py-4'> </th>
-            <th className="border-none px-4 py-2">Appeal ID</th>
-            <th className="border-none px-4 py-2">Claim ID</th>
-            <th className="border-none px-4 py-2">Patient</th>
-            <th className="border-none px-4 py-2">Submission Date</th>
-            <th className="border-none px-4 py-2">Status</th>
-            <th className="border-none px-4 py-2">Priority</th>
-            <th className="border-none px-4 py-2">Doctor ID</th>
-            <th className="border-none px-4 py-2">Days Open</th>
-            <th className="rounded-tr-xl border-none px-4 py-2">Actions</th>
+          <tr className="w-full bg-gray-300 text-left">
+            <th className="w-[40px] px-4 py-4"> </th>
+            <th className="w-[100px] px-4 py-2">Appeal ID</th>
+            <th className="w-[100px] px-4 py-2">Claim ID</th>
+            <th className="w-[120px] px-4 py-2">Patient</th>
+            <th className="w-[140px] px-4 py-2">Submission Date</th>
+            <th className="w-[100px] px-4 py-2">Status</th>
+            <th className="w-[80px] px-4 py-2">Priority</th>
+            <th className="w-[100px] px-4 py-2">Doctor ID</th>
+            <th className="w-[80px] px-4 py-2">Days Open</th>
+            <th className="w-[100px] px-4 py-2">Actions</th>
           </tr>
         </thead>
         <tbody>
           {paginatedData.map((row, idx) => (
-            <tr key={idx} className={isEven(idx) ? "bg-gray-100 text-left w-full flex flex-row items-center justify-between" 
-            : "bg-gray-200 text-left w-full flex flex-row items-center justify-between"}>
-              <td className="px-4 py-4">
+            <tr key={idx} className={isEven(idx) ? "bg-gray-100 text-left" 
+            : "bg-gray-200 text-left"}>
+              <td className="w-[50px] pl-4">
                 <input
                   type="checkbox"
                   checked={selectedRows.includes(row.appealId)}
                   onChange={() => handleCheckboxChange(row.appealId)}
                 />
               </td>
-              <td className="border-non px-4 py-4">{row.appealId}</td>
-              <td className="border-none px-4 py-4">{row.claimId}</td>
-              <td className="border-none px-4 py-4">{row.patient}</td>
-              <td className="border-none px-4 py-4">{row.submissionDate}</td>
-              <td className="border-none px-4 py-4">{row.status}</td>
-              <td className="border-none px-4 py-4">
-                {console.log(row.priority)}
-                <span className={`w-fit h-auto rounded-[8px] px-3 py-1 text-xs ${
+              <td className="w-[100px] border-non py-4">{row.appealId}</td>
+              <td className="w-[100px] border-none py-4">{row.claimId}</td>
+              <td className="truncate max-w-[120px] w-[120px] border-none py-4">{row.patient}</td>
+              <td className="border-none py-4">{row.submissionDate}</td>
+              <td className="w-1/8 border-none py-4">{row.status}</td>
+              <td className="w-[80px] bg-red-500 border-none py-4">
+                <span className={`w-full rounded-[8px] py-1 text-xs ${
                     row.priority === 'High'
                         ? 'bg-red-600 bg-opacity-30 text-red-800'
                         : row.priority === 'Medium'

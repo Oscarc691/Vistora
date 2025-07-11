@@ -1,7 +1,10 @@
 import React from "react";
 import { useState } from "react";
-import Table from "../../ui/AppealsTable";
+// import Table from "../../ui/AppealsTable";
+import Table from "../../ui/Table";
 import DashboardStatCard from "../General/DashboardStatCard";
+import AppealDetailView from '../../ui/AppealsDetailView'
+import Modal from "../../ui/modal";
 import { MessageSquare, Clock, AlarmClockCheck, AlarmMinusIcon, AlertTriangleIcon, X } from "lucide-react"; 
 
 const AppealsManagement = () => {
@@ -9,6 +12,75 @@ const AppealsManagement = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedRows, setSelectedRows] = useState([]);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [selectedAppeal, setSelectedAppeal] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const addItem = (newItem) => {
+    setSelectedRows((prevArray) => {
+      if (prevArray.includes(newItem)) {
+        return prevArray.filter((item) => item !== newItem);
+      } else{
+      return [...prevArray, newItem];
+      }
+    });  
+  };
+
+  const openAppealDetail = (row) => {
+    setSelectedAppeal(row);
+    setIsModalOpen(true);
+  };
+
+  const columns = [
+  {
+    key: "checkbox",
+    label: "",
+    render: (_, item) => (
+      <input
+        type="checkbox"
+        checked={selectedRows.includes(item.appealId)}
+        onClick={(e) => e.stopPropagation()}
+        onChange={() => addItem(item.appealId)}
+      />
+    )
+  },
+  {
+    key: "appealId",
+    label: "Appeal ID",
+    sortable: true,
+  },
+  {
+    key: "claimId",
+    label: "Claim ID",
+    sortable: true,
+  },
+  {
+    key: "patient",
+    label: "Patient",
+    sortable: true,
+  },
+  {
+    key: "submissionDate",
+    label: "Submission Date",
+    sortable: true,
+  },
+  {
+    key: "status",
+    label: "Status",
+    sortable: true,
+  },
+  {
+    key: "priority",
+    label: "Priority",
+    sortable: true,
+    render: (value) => (
+      <span className={`px-2 py-1 rounded text-xs ${
+        value === 'High' ? 'bg-red-100 text-red-700'
+        : value === 'Medium' ? 'bg-yellow-100 text-yellow-700'
+        : 'bg-green-100 text-green-700'
+      }`}>{value}</span>
+    )
+  },
+]
 
   const sampleData = [
     {
@@ -169,7 +241,33 @@ const AppealsManagement = () => {
         </div>
         
       </div>
-      <Table data={sampleData} statusFilter={statusFilter} setStatusFilter={setStatusFilter} selectedRows={selectedRows} setSelectedRows={setSelectedRows}/>
+
+      <Table title="Appeals Inbox" subtitle="Click row to view Appeals in detail" showSearch={true} data={sampleData} columns={columns}  
+      onRowClick={(row) => openAppealDetail(row)}
+      renderHeaderActions={() => (
+        <>
+              {selectedRows.length > 0 && (
+                <button className='border bg-red-900 rounded-[8px] px-3 py-2 text-white font-semibold' onClick={() => setIsBulkModalOpen(true)}>
+                  Assign Bulk ({selectedRows.length})
+                </button>
+              )}
+            </>
+          )}
+          highlightCondition={(item) => item.priority === 'High'}
+        />
+
+      {selectedAppeal && (
+          <Modal isOpen={isModalOpen} onClose={() => {
+              setIsModalOpen(false);
+              setSelectedAppeal(null);
+            }}
+            title="Appeal Detail View"
+            subtitle={`Appeal ID: ${selectedAppeal?.appealId ?? ""}`}
+          >
+            <AppealDetailView appeal={selectedAppeal}></AppealDetailView>
+          </Modal>
+
+        )}
 
       {isBulkModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -182,12 +280,13 @@ const AppealsManagement = () => {
             <h2 className='font-semibold'>Actions Panel</h2>
             <p className='font-medium text-sm'>Appeals chosen: {selectedRows.length}</p>
             <span className='text-sm flex flex-row gap-3'>
-              <button className='border bg-green-600 rounded-[8px] px-3 py-2 text-white font-semibold'>Approve Appeal</button>
-              <button className='border bg-red-600 rounded-[8px] px-3 py-2 text-white font-semibold'>Reject Appeal</button>
+              <button className='border bg-green-900 rounded-[8px] px-3 py-2 text-white font-semibold'>Approve Appeal</button>
+              <button className='border bg-red-900 rounded-[8px] px-3 py-2 text-white font-semibold'>Reject Appeal</button>
             </span>
          </div>
         </div>
       )}
+
     </section>
   );
 };
