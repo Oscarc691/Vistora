@@ -1,18 +1,32 @@
-import { Columns } from "lucide-react";
-import React, {useState} from "react";
-
+import {
+  Calendar,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Eye,
+  FileText,
+  Users,
+  Send,
+  User,
+  Building2,
+  Shield,
+  X,
+} from "lucide-react"
+import React, { useState, useEffect } from "react";
+import Table from "../../ui/Table"
+import Modal from "../../ui/modal"
 {/** Replace this component for the dashboard page */}
 
 const ProviderData = [
-    { id: 1126564, name: 'UnitedHealth Group', specialization: 'Brain', location: 'Los Angeles', claimsSubmitted: 21, approvals: 20, rejected: 1, averageRiskScore: 70, flags: "flag", orginization: "Health", contact: "818-123-4567"},
-    { id: 2721875, name: 'Centene', specialization: 'Elders', location: 'Irvine', claimsSubmitted: 60, approvals: 20, rejected: 40, averageRiskScore: 80, flags: "flag", orginization: "Health", contact: "818-123-4567"},
-    { id: 365275, name: 'Humana', specialization: 'Disease', location: 'San Diego', claimsSubmitted: 100, approvals: 50, rejected: 50, averageRiskScore: 50, flags: "flag", orginization: "Health", contact: "818-123-4567"},
-    { id: 113564, name: 'Kaiser Foundation', specialization: 'Brain', location: 'Los Angeles', claimsSubmitted: 150, approvals: 10, rejected: 140, averageRiskScore: 30, flags: "flag", orginization: "Health", contact: "818-123-4567"},
-    { id: 114564, name: 'Cigna Health', specialization: 'Medicine', location: 'Los Angeles', claimsSubmitted: 110, approvals: 100, rejected: 10, averageRiskScore: 70, flags: "flag", orginization: "Health", contact: "818-123-4567"},
-    { id: 116564, name: 'Molina Healthcare Inc.', specialization: 'Bones', location: 'Los Angeles', claimsSubmitted: 360, approvals: 330, rejected: 30, averageRiskScore: 22, flags: "flag", orginization: "Health", contact: "818-123-4567"},
-    { id: 123654, name: 'Molina Healthcare Inc.', specialization: 'Bones', location: 'Boston', claimsSubmitted: 70, approvals: 20, rejected: 50, averageRiskScore: 73, flags: "flag", orginization: "Health", contact: "818-123-4567"},
-    { id: 127263, name: 'Molina Healthcare Inc.', specialization: 'Bones', location: 'Chicago', claimsSubmitted: 50, approvals: 40, rejected: 10, averageRiskScore: 55, flags: "flag", orginization: "Health", contact: "818-123-4567"},
-    { id: 124346, name: 'Molina Healthcare Inc.', specialization: 'Bones', location: 'Boston', claimsSubmitted: 80, approvals: 70, rejected: 10, averageRiskScore: 31, flags: "flag", orginization: "Health", contact: "818-123-4567"}
+    { id: 1126564, name: 'UnitedHealth Group', specialization: 'Brain', location: 'Los Angeles', claimsSubmitted: 21, approvals: 20, rejected: 1, averageRiskScore: 70, flags: "flag", organization: "Health", contact: "818-123-4567"},
+    { id: 2721875, name: 'Centene', specialization: 'Elders', location: 'Irvine', claimsSubmitted: 60, approvals: 20, rejected: 40, averageRiskScore: 80, flags: "flag", organization: "Health", contact: "818-123-4567"},
+    { id: 365275, name: 'Humana', specialization: 'Disease', location: 'San Diego', claimsSubmitted: 100, approvals: 50, rejected: 50, averageRiskScore: 50, flags: "flag", organization: "Health", contact: "818-123-4567"},
+    { id: 113564, name: 'Kaiser Foundation', specialization: 'Brain', location: 'Los Angeles', claimsSubmitted: 150, approvals: 10, rejected: 140, averageRiskScore: 30, flags: "flag", organization: "Health", contact: "818-123-4567"},
+    { id: 114564, name: 'Cigna Health', specialization: 'Medicine', location: 'Los Angeles', claimsSubmitted: 110, approvals: 100, rejected: 10, averageRiskScore: 70, flags: "flag", organization: "Health", contact: "818-123-4567"},
+    { id: 116564, name: 'Molina Healthcare Inc.', specialization: 'Bones', location: 'Los Angeles', claimsSubmitted: 360, approvals: 330, rejected: 30, averageRiskScore: 22, flags: "flag", organization: "Health", contact: "818-123-4567"},
+    { id: 123654, name: 'Molina Healthcare Inc.', specialization: 'Bones', location: 'Boston', claimsSubmitted: 70, approvals: 20, rejected: 50, averageRiskScore: 73, flags: "flag", organization: "Health", contact: "818-123-4567"},
+    { id: 127263, name: 'Molina Healthcare Inc.', specialization: 'Bones', location: 'Chicago', claimsSubmitted: 50, approvals: 40, rejected: 10, averageRiskScore: 55, flags: "flag", organization: "Health", contact: "818-123-4567"},
+    { id: 124346, name: 'Molina Healthcare Inc.', specialization: 'Bones', location: 'Boston', claimsSubmitted: 80, approvals: 70, rejected: 10, averageRiskScore: 31, flags: "flag", organization: "Health", contact: "818-123-4567"}
   ]
 function calculatePercentage(approvals, claims) {
   if (claims === 0) {
@@ -22,6 +36,7 @@ function calculatePercentage(approvals, claims) {
   return parseFloat(percent);
 }
 
+
 const ProvidersContainer = () => {
   const [filterLocation, setFilterLocation] = useState("");
   const [filterSpecialization, setFilterSpecialization] = useState('')
@@ -29,81 +44,97 @@ const ProvidersContainer = () => {
   const uniqueLocation = [...new Set(ProviderData.map((item) => item.location))];
   const uniqueSpecialization = [...new Set(ProviderData.map((item) => item.specialization))]
   const uniqueRiskRange = [...new Set(ProviderData.map((item) => item.averageRiskScore))]
-  const [searchText, setSearchText] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedProvider, setSelectedProvider] = useState('')
+  const [selectedProviderId, setSelectedProviderId] = useState('')
+  const [selectedProviderItem, SetSelectedProviderItem] = useState('')
+  const [showModalProvider, setShowModalProvider] = useState('')
+  const [riskScoreRange, setRiskScoreRange] = useState([0, 100])
+
+  
+/**Get render fillter from Oscars code */
+  const renderFilters = () => (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Risk Score Range</label>
+        <div className="flex items-center space-x-2">
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={riskScoreRange[0]}
+            onChange={(e) => setRiskScoreRange([Number.parseInt(e.target.value), riskScoreRange[1]])}
+            className="w-16 px-2 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-800"
+          />
+          <span className="text-gray-500">-</span>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={riskScoreRange[1]}
+            onChange={(e) => setRiskScoreRange([riskScoreRange[0], Number.parseInt(e.target.value)])}
+            className="w-16 px-2 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-red-800"
+          />
+        </div>
+      </div>
+        
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+        <select
+            value={filterLocation}
+            onChange={(e) => setFilterLocation(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800 focus:border-red-500"
+        >
+        <option value="">All Cities</option>
+          {uniqueLocation.map((location) => (
+              <option key={location} value={location}>
+                {location}
+              </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
+          <select
+            value={filterSpecialization}
+            onChange={(e) => setFilterSpecialization(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800 focus:border-red-500"
+
+          >
+          <option value="">All Specialization</option>
+            {uniqueSpecialization.map((specialization) => (
+              <option key={specialization} value={specialization}>
+                {specialization}
+              </option>
+            ))}
+          </select>
+      </div>
+     </div>
+  )
 
 
+
+  
   const filteredData = ProviderData.filter((item) => 
-    (item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-    item.location.toLowerCase().includes(searchText.toLowerCase()) ||
-    item.id.toString().includes(searchText) ||
-    item.specialization.toLowerCase().includes(searchText.toLowerCase()))
+    
+    (item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.id.toString().includes(searchTerm) ||
+    item.specialization.toLowerCase().includes(searchTerm.toLowerCase()))
     &&
     (filterLocation === "" || item.location === filterLocation) 
     &&
     (filterSpecialization === "" || item.specialization === filterSpecialization)
     &&
-    (filterRiskRange === "" || item.averageRiskScore == filterRiskRange)
+    (item.averageRiskScore >= riskScoreRange[0] && item.averageRiskScore <= riskScoreRange[1])
     ); 
     
   function ShowSelectedProvider(id, item) {
-    setSelectedProvider(() => (      
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 mb-6 hover:shadow-2xl transition-all duration-300">
-      <div className="px-8 py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center space-x-3">
-              <h1 className="text-2xl font-bold text-gray-900">{item.name}</h1>
-            </div>
-            <p className="text-gray-600 mt-1">ID : {item.id}</p>
-            <p className="text-gray-600 mt-1">Affiliatied Orginization : {item.orginization}</p>
-          </div>
-            <h3>Contact Info : {item.contact}</h3>
-            <button className="text-center px-6 py-3 bg-gradient-to-r from-purple-900 to-purple-800 text-white rounded-xl hover:from-purple-800 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-800/30 transition-all duration-300 shadow-lg hover:shadow-xl font-medium" onClick={() => setSelectedProvider('')}>Close X</button>
-        </div>
-      </div>
-       <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 mb-6 hover:shadow-2xl transition-all duration-300">
-            <div className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="lg:col-span-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Claims Per Month</h2>
-                      <p className="text-gray-600 mt-1">{item.claimsSubmitted}</p>
-                      <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                        <span>Approval Rate</span>
-                        <span>{calculatePercentage(item.approvals, item.claimsSubmitted)}%</span>
-                        <span>Risk Score</span>
-                        <span>{item.averageRiskScore}</span>
-                      </div>
-                    </div>
-                    <span className="bg-blue-100 text-blue-800 border-blue-200">Pie chart is going to go here</span>
-                    <span className="px-3 py-1 text-sm font-medium rounded-full border">Top Diagnosis codes are going to go here</span>
-                    <span
-                      className={`px-3 py-1 text-md font-medium rounded-full border `}
-                    >
-                      Flag History
-                    </span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end">
-                  <div className="text-right">
-                    <div className="text-center px-6 py-3 bg-gradient-to-r from-yellow-900 to-yellow-800 text-white rounded-xl hover:from-yellow-800 hover:to-yellow-700 focus:outline-none focus:ring-4 focus:ring-yellow-800/30 transition-all duration-300 shadow-lg hover:shadow-xl font-medium">
-                      <button>Request Audit</button>
-                    </div>
-                    <div className="text-center px-6 py-3 bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-xl hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-800/30 transition-all duration-300 shadow-lg hover:shadow-xl font-medium">
-                      <button>Suspend Provider</button>
-                    </div>
-                    <div className="px-6 py-3 bg-gradient-to-r from-red-900 to-red-800 text-white rounded-xl hover:from-red-800 hover:to-red-700 focus:outline-none focus:ring-4 focus:ring-red-800/30 transition-all duration-300 shadow-lg hover:shadow-xl font-medium">
-                      <button>Download Provider Report</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-    </div>))
-
+    setShowModalProvider(true)
+    setSelectedProviderId(id)
+    SetSelectedProviderItem(item)
+    
   }
   /**Table Component */
   return (
@@ -121,48 +152,19 @@ const ProvidersContainer = () => {
             </div>
           </div>
         </div>
-          <input 
-          type="text" 
-          placeholder="Name, City or Specialization"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          className="mb-4 p-2 border border-gray-300 rounded"
-          />
-            <select
-              value={filterLocation}
-              onChange={(e) => setFilterLocation(e.target.value)}
-            >
-            <option value="">All Cities</option>
-              {uniqueLocation.map((location) => (
-                <option key={location} value={location}>
-                  {location}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filterSpecialization}
-              onChange={(e) => setFilterSpecialization(e.target.value)}
-            >
-            <option value="">All Specialization</option>
-              {uniqueSpecialization.map((specialization) => (
-                <option key={specialization} value={specialization}>
-                  {specialization}
-                </option>
-              ))}
-            </select>
-              <select
-              value={filterRiskRange}
-              onChange={(e) => setFilterRiskRange(e.target.value)}
-            >
-            <option  value="">Risk Range</option>
-              {uniqueRiskRange.map((risk) => (
-                <option key={risk} value={risk}>
-                  {risk}
-                </option>
-              ))}
-            </select>
+          <Table
+          data={ProviderData}
+          value={searchTerm}
+          title=""
+          subtitle=""
+          showSearch={true}
+          showPagination={true}
+          itemsPerPage={10}
+          renderFilters={renderFilters}
+          onChange={(e) => setSearchTerm(e.target.value)}
+
+        />
           {/**Main Table */}
-          <div>{selectedProvider}</div>
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -231,7 +233,157 @@ const ProvidersContainer = () => {
           </table>
           
       </div>
-      
+        <Modal 
+          isOpen={showModalProvider}
+          onClose={() => setShowModalProvider(false)}
+          title={selectedProviderItem.name}
+          subtitle={`ID: ${selectedProviderId} Organization: ${selectedProviderItem.organization} (${selectedProviderItem.contact})`}
+          size="xl"
+        >
+          {<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column */}
+              <div className="lg:col-span-2 space-y-6">
+                
+                {/* Claim Summary Section */}
+                <div className="bg-blue-50 rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-blue-900 mb-4">Claim Summary</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="text-gray-600">`Claims Per Month: `</span>{" "}
+                          <span className="font-medium">{selectedProviderItem.claimsSubmitted}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="text-gray-600">Approved Claims:</span>{" "}
+                          <span className="font-medium">{selectedProviderItem.approvals}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Flag Analysis Section */}
+                <div className="bg-red-50 rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-red-900 mb-4">Flag Analysis</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <h5 className="text-sm font-medium text-red-800 mb-3">All Flagged Indicators</h5>
+                      <div className="space-y-2">
+                        
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Documentation Section */}
+                <div className="bg-green-50 rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-green-900 mb-4">Supporting Documentation</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
+                      <div className="flex items-center">
+                        
+                        <div>
+                          <div className="font-medium text-gray-900">Medical Report.pdf</div>
+                          <div className="text-sm text-gray-500">2.3 MB</div>
+                        </div>
+                      </div>
+                      <button className="flex items-center text-green-600 hover:text-green-800">
+                        View Eye
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
+                      <div className="flex items-center">
+                        
+                        <div>
+                          <div className="font-medium text-gray-900">Invoice.pdf</div>
+                          <div className="text-sm text-gray-500">0.9 MB</div>
+                        </div>
+                      </div>
+                      <button className="flex items-center text-green-600 hover:text-green-800">
+                       
+                        View
+                      </button>
+                    </div>
+
+                    
+                  </div>
+                </div>
+
+                {/* Review Notes Section */}
+                <div className="bg-yellow-50 rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-yellow-900 mb-4">Review Notes</h4>
+                  <textarea
+                    placeholder="Add your review notes here..."
+                    className="w-full px-3 py-2 border border-yellow-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-800 bg-white"
+                    rows="4"
+                  />
+                </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                {/* Risk Assessment Section */}
+                <div className="bg-red-50 rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-red-900 mb-4">Risk Assessment</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">Risk Score</span>
+                        <span className="text-lg font-bold text-gray-900">{selectedProviderItem.averageRiskScore}/100</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-4">
+                        <div
+                          className={`h-4 rounded-full bg-gradient-to-r from-red-600 to-red-900`}
+                          style={{ width: `${selectedProviderItem.averageRiskScore}%` }}
+                        ></div>
+                      </div>
+                      <div className="text-center mt-2 flex items-center justify-center space-x-2">
+                        
+                        <span
+                          className={`px-3 py-1 text-sm font-medium rounded-full `}
+                        >
+                         Risk
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-sm text-gray-600">AI Confidence:</span>
+                      <span className="ml-2 font-medium text-gray-900">{`${calculatePercentage(selectedProviderItem.approvals, selectedProviderItem.claimsSubmitted)}%`}</span>
+                    </div>
+
+                    <div>
+                      <span className="text-sm text-gray-600">Flag Type:</span>
+                      <span className="ml-2 font-medium text-gray-900">flagType</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Review Actions Section */}
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Review Actions</h4>
+                  <div className="space-y-3">
+                    <div className="text-center px-6 py-3 bg-gradient-to-r from-yellow-900 to-yellow-800 text-white rounded-xl hover:from-yellow-800 hover:to-yellow-700 focus:outline-none focus:ring-4 focus:ring-yellow-800/30 transition-all duration-300 shadow-lg hover:shadow-xl font-medium">
+                      <button>Request Audit</button>
+                    </div>
+                    <div className="text-center px-6 py-3 bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-xl hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-800/30 transition-all duration-300 shadow-lg hover:shadow-xl font-medium">
+                      <button>Suspend Provider</button>
+                    </div>
+                    <div className="text-center px-6 py-3 bg-gradient-to-r from-red-900 to-red-800 text-white rounded-xl hover:from-red-800 hover:to-red-700 focus:outline-none focus:ring-4 focus:ring-red-800/30 transition-all duration-300 shadow-lg hover:shadow-xl font-medium">
+                      <button>Download Provider Report</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </Modal>
 
     </div>
     
